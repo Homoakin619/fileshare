@@ -3,13 +3,14 @@ const dns = require('dns');
 const os = require('os');
 const fs = require('fs')
 const chalk = require("chalk")
+const path = require("path")
 const {displayTitle, sendFile} = require("./utils")
 
 function startServer(filename) {
     const server = net.createServer((socket) => {
         console.log(chalk.yellow.bold("Handshake successful 🤝"));
 
-        sendFile(filename,socket)
+        sendFile(filename,socket);
         socket.end()
         
         socket.on("connect",() => {
@@ -17,7 +18,6 @@ function startServer(filename) {
         })
     
         socket.on("data",(data) => {
-        
             console.log();
         });
     
@@ -28,6 +28,10 @@ function startServer(filename) {
 
     server.listen(3000,() => {
         
+        // sendFile(filename,"socket");
+        const currentDir = path.join(process.cwd(),filename);
+        // console.log(path);
+        // console.log(currentDir)
         displayTitle()
         console.log(chalk.bold.greenBright("Connection created..."));
         console.log(chalk.bold.green("Waiting for Receiver 🔗🔗🔗🔗🔗🔗"));

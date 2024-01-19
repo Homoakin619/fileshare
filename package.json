@@ -1,15 +1,19 @@
 {
   "name": "fileshare",
   "version": "1.0.0",
-  "description": "",
+  "description": "A library that helps you send files over wifi between different devices",
   "main": "bin/index.js",
   "bin": {
     "fileshare": "./bin/index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Homoakin619/fileshare.git"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["sender","xender","share","send","file"],
   "author": "Ismail Akintunde",
   "license": "ISC",
   "dependencies": {

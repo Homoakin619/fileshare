@@ -52,63 +52,65 @@ function isDirectory(filepath) {
     try {
         return fs.statSync(filepath).isDirectory()
     } catch (error) {
+        // console.log(filepath);
         throw(chalk.bold.red("Error occured while locating file"))
     }
 }
 
 function saveFiles(data){
-    const filesArray = data.payloads;
-    let directory = data.parentDir
-
-    if (data.isDirectory) {
-        if (!fs.existsSync(data.parentDir)) {
-            fs.mkdirSync(directory,{recursive: true});
-        } else {
-            directory += "__"
-            fs.mkdirSync(directory,{recursive: true})
-        }
-    }
-    const finaldirectory = path.join(process.cwd(),directory)
-
+    let filesArray = data.payloads;
+    const currentDir = process.cwd();
+    
     filesArray.forEach((file) => {
+        const fileName = file.filename.split('/')[(file.filename.split('/')).length -1];
+        const dirPath = file.filename.replace(fileName,"");
+        const destinationPath = path.join(currentDir,dirPath)
+        fs.mkdirSync(destinationPath,{recursive: true});
         const fileContent = Buffer.from(file.fileContent.data);
-        let filepath = file.filename
-        if (data.isDirectory) {
-            fs.writeFileSync(path.join(finaldirectory,filepath),fileContent)
-        } else{
-          fs.writeFileSync(filepath,fileContent)
+        let filepath = path.join(destinationPath,fileName)
+        fs.writeFileSync(filepath,fileContent)
+    })
+}
+
+function flattenFolders(dir, arr){
+    const files = fs.readdirSync(dir);
+    files.forEach(file => {
+        const filepath = path.join(dir,file);
+        const stats = fs.statSync(filepath);
+        if (stats.isDirectory()) {
+            flattenFolders(filepath,arr);
+        } else {
+            arr.push(filepath)
         }
     })
 }
 
 
 function sendFile(filepath,socket) {
+    let JsonPayload = {};
     if(!isDirectory(filepath)) {
         const fileContent = fs.readFileSync(filepath);
         const filePayload = { filename:filepath, fileContent};
-        const JsonPayload = {
-            isDirectory: false,
-            payloads: [filePayload]
-        }
-        socket.write(JSON.stringify(JsonPayload));
+        JsonPayload.payloads = [filePayload]
+        
     } else {
-        const files = fs.readdirSync(filepath);
-        const allFilesPayload = [];
+        let fileDirectories = []
+        const currentDir = path.join(process.cwd(),filepath);
+        
+        flattenFolders(currentDir,fileDirectories);
+        const allFilesPayload = []
 
-        files.forEach((filename) => {
-            const filePath = path.join(filepath,filename);
+        fileDirectories.forEach((filePath) => {
             const fileContent = fs.readFileSync(filePath);
-            const filePayload = { filename, fileContent};
+            const filename =  filePath.replace(new RegExp(`^${currentDir}`),"")
+            const filePayload = { filename: path.join(filepath,filename), fileContent};
             allFilesPayload.push(filePayload)
             setTimeout(()=>{},100);
         })
-        const JsonPayload = {
-            isDirectory: true,
-            parentDir: filepath,
-            payloads: allFilesPayload
-        }
-        socket.write(JSON.stringify(JsonPayload));
+        
+        JsonPayload.payloads = allFilesPayload
     }
+    socket.write(JSON.stringify(JsonPayload));
 }
 
 module.exports = { showHelp: showHelp,displayTitle: displayTitle,isDirectory,sendFile,saveFiles};
